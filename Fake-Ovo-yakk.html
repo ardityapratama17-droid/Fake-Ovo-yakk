@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generator OVO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            padding: 10px;
+        }
+        .input-area {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .input-area input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .btn-generate {
+            background: #0095ff;
+        }
+        #downloadBtn {
+            margin-top: 15px;
+            background: #28a745;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="input-area">
+        <label class="text-sm font-semibold text-gray-700">Masukkan Nominal:</label>
+        <input type="text" id="amountInput" placeholder="Contoh: 1.000.000" value="1.000.000">
+        <button class="btn-generate" onclick="generate()">Generate</button>
+    </div>
+
+    <canvas id="canvas" width="841" height="1870"></canvas>
+    <br>
+    <button id="downloadBtn" onclick="downloadImage()">📥 Download</button>
+
+    <script>
+        // LINK GAMBAR BACKGROUND
+        const IMAGE_URL = "https://raw.githubusercontent.com/Ditzzx-vibecoder/Assets/main/Image/file_0000000078bc71fa87da5cf26dc6c008.jpeg";
+
+        // UKURAN KANVAS
+        const WIDTH = 841;
+        const HEIGHT = 1870;
+
+        // STYLE TEKS RP
+        const FIXED_RP = {
+            text: "Rp",
+            x: 61,
+            y: 368,
+            size: 20,
+            weight: 800,
+        };
+
+        // STYLE TEKS NOMINAL
+        const AMOUNT_STYLE = {
+            x: 94,
+            y: 371,
+            size: 28,
+            weight: 800,
+            color: "#FFFFFF",
+        };
+
+        // FUNGSI FORMAT ANGKA SESUAI STANDAR
+        function formatAmount(input) {
+            const digits = String(input).replace(/[^\d]/g, "") || "0";
+            const normalized = digits.replace(/^0+(?=\d)/, "");
+            return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // LOAD GAMBAR DARI URL
+        function loadImage(src) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = () => {
+                    alert("Gambar gagal dimuat! Cek link atau koneksi.");
+                    reject();
+                }
+                img.src = src;
+            });
+        }
+
+        // FUNGSI UTAMA GENERATE GAMBAR
+        async function generate() {
+            const amountInput = document.getElementById('amountInput').value;
+            const AMOUNT_TEXT = formatAmount(amountInput);
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            try {
+                // Load gambar latar
+                const bg = await loadImage(IMAGE_URL);
+
+                // Gambar background
+                ctx.drawImage(bg, 0, 0, WIDTH, HEIGHT);
+
+                // PENGATURAN TEKS
+                ctx.fillStyle = AMOUNT_STYLE.color;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "alphabetic";
+
+                // Tulis teks "Rp"
+                ctx.font = `${FIXED_RP.weight} ${FIXED_RP.size}px "Plus Jakarta Sans", sans-serif`;
+                ctx.fillText(FIXED_RP.text, FIXED_RP.x, FIXED_RP.y);
+
+                // Tulis nominal uang
+                ctx.font = `${AMOUNT_STYLE.weight} ${AMOUNT_STYLE.size}px "Plus Jakarta Sans", sans-serif`;
+                ctx.fillText(AMOUNT_TEXT, AMOUNT_STYLE.x, AMOUNT_STYLE.y);
+
+                // Tampilkan tombol download
+                document.getElementById('downloadBtn').style.display = 'block';
+
+                console.log({
+                    Status: true,
+                    Code: 200,
+                    AmountInput: amountInput,
+                    AmountText: AMOUNT_TEXT,
+                    Size: `${WIDTH}x${HEIGHT}`,
+                });
+
+            } catch (err) {
+                console.error(err);
+                console.log({
+                    Status: false,
+                    Code: 500,
+                    Error: err.message,
+                });
+                alert("Terjadi kesalahan saat membuat gambar!");
+            }
+        }
+
+        // FUNGSI DOWNLOAD GAMBAR
+        function downloadImage() {
+            try {
+                const canvas = document.getElementById('canvas');
+                const link = document.createElement('a');
+                link.download = `ovo-rp0-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {
+                alert("Gagal download gambar!");
+            }
+        }
+
+        // Jalankan otomatis saat halaman dimuat
+        window.onload = generate;
+    </script>
+</body>
+</html>
